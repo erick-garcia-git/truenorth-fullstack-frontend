@@ -16,6 +16,9 @@ const customStyles = {
 };
 
 function App () {
+  const [completedTasks, setCompletedTasks] = useState([])
+  const [typeOfTasks, setTypeOfTasks] = useState('active')
+  const [numberOfTasksToFetch, setNumberOfTasksToFetch] = useState(3)
   const [titles, setTitles] = useState([])
   const [modalIsOpen, setIsOpen] = useState(false)
   const [selectedTask, setSelectedTask] = useState({})
@@ -45,23 +48,48 @@ function App () {
     })
   }
 
-  useEffect(() => {
-    console.log('component mounted ')
-    axios.get('http://localhost:4000/tasks')
+  function fetchTasks (numberOfTasks) {
+    axios.get(`http://localhost:4000/tasks?quantity=${numberOfTasks}`)
       .then(({ data }) => {
         setTitles(data.titles)
+        setCompletedTasks(data.titlesCompleted)
       })
-  }, [])
+  }
 
+  function onChangeNumberOfTasksToFetch (evt) {
+    const value = evt.target.value
+    setNumberOfTasksToFetch(value)
+  }
+
+  useEffect(() => {
+    fetchTasks(numberOfTasksToFetch)
+  }, [numberOfTasksToFetch])
+
+  const tasksToShow = typeOfTasks === 'active' ? titles : completedTasks
+  const classForTask = `grid-item ${typeOfTasks}`
   return (
     <div className="container">
       <header>
         Task list
       </header>
+      <div className="filters-container">
+        <div>Tasks to fetch <input type="text" placeholder="Number of tasks" onChange={(evt) => onChangeNumberOfTasksToFetch(evt)} /></div>
+        <div>
+          Change type of tasks
+          <select onChange={(evt) => setTypeOfTasks(evt.target.value)}>
+            <option value="active">Active</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
+      </div>
       <div className="titles-container">
-        {titles.map((task) => {
+        {tasksToShow.map((task) => {
           return (
-            <div className="grid-item" onClick={() => toggleModal(task)}>{task.title}</div>
+            <div key={task.id} className={classForTask} onClick={() => {
+              if (typeOfTasks === 'active') {
+                toggleModal(task)
+              }
+            }}>{task.title}</div>
           )
         })}
       </div>
